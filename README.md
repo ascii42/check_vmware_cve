@@ -2,7 +2,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Shell](https://img.shields.io/badge/shell-bash-green.svg)](https://www.gnu.org/software/bash/)
 [![Monitoring](https://img.shields.io/badge/Monitoring-Icinga%2FNagios-blue.svg)](https://icinga.com/)
-[![Version](https://img.shields.io/badge/version-0.0.1-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.0.2-orange.svg)](CHANGELOG.md)
 
 check_vmware_cve is an icinga plugin to gather CVEs and compare it with the used products
 
