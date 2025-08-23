@@ -1,12 +1,24 @@
 #!/bin/bash
+#check_vmware_cve.sh
+# Icinga plugin: Gather CVEs and Check vcenter and esxi systems
 
-# Enhanced ESXi/VMware CVE Check Plugin - COMPLETE FIXED VERSION WITH BROADCOM API
+# Dependencies: curl, jq
+# Enhanced ESXi/VMware CVE Check Plugin - AUTO-UPDATING VERSION
 # Supports ESXi, vCenter, NSX, vCloud Director, vRealize/Aria
-# Sources: Broadcom Security Advisory API, NVD, BSI.BUND + Auto-Updating Build Numbers
+# Sources: NVD, Broadcom Security, BSI.BUND + Auto-Updating Build Numbers
 
+# Version history:
+# 2025-08-22 Felix Longardt <monitoring@longardt.com>
+# Release: 0.0.1
+#   Initial release - alpha
+# Release: 0.0.2
+#   add proxy support
+# Release: 0.0.3
+#   fix broadcom api
+#
 PROGNAME=$(basename "$0")
-VERSION="2.6-enhanced-broadcom-api"
-AUTHOR="Enhanced VMware CVE Plugin with Broadcom API Support"
+VERSION="0.0.3"
+AUTHOR="Felix Longardt"
 
 # Nagios/Icinga return codes
 STATE_OK=0
@@ -1885,3 +1897,4 @@ main() {
         workaround=$(echo "$cve" | jq -r '.workaround // ""' 2>/dev/null)
         local source
         source=$(echo "$cve" | jq -
+
