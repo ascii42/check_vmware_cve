@@ -349,11 +349,11 @@ FALLBACK_BUILDS
         local esxi_count=$(jq '.esxi."8.0"."8.0.3".releases | length' "$BUILD_MAPPING_FILE" 2>/dev/null || echo 0)
         local vcenter_count=$(jq '.vcenter."8.0"."8.0.3".releases | length' "$BUILD_MAPPING_FILE" 2>/dev/null || echo 0)
 
-        verbose_log "✓ Build mappings initialized: $esxi_count ESXi builds, $vcenter_count vCenter builds"
+        verbose_log "Build mappings initialized: $esxi_count ESXi builds, $vcenter_count vCenter builds"
         echo "$(date '+%Y-%m-%d %H:%M:%S'): Build mappings initialized" >> "$FETCH_LOG"
         return 0
     else
-        verbose_log "✗ Failed to create valid build mappings JSON"
+        verbose_log "Failed to create valid build mappings JSON"
         rm -f "$temp_builds"
         return 1
     fi
@@ -529,11 +529,11 @@ REAL_CVE_DB
         mv "$temp_cve_db" "$BROADCOM_CACHE_FILE"
         chmod 644 "$BROADCOM_CACHE_FILE"
 
-        verbose_log "✓ Real CVE database initialized with 6 current CVEs"
+        verbose_log "Real CVE database initialized with 6 current CVEs"
         echo "$(date '+%Y-%m-%d %H:%M:%S'): Real CVE database initialized with current vulnerabilities" >> "$FETCH_LOG"
         return 0
     else
-        verbose_log "✗ Failed to create valid CVE database JSON"
+        verbose_log "Failed to create valid CVE database JSON"
         rm -f "$temp_cve_db"
         return 1
     fi
@@ -546,10 +546,10 @@ fetch_broadcom_cve_data() {
 
     # Use the initialized CVE database
     if initialize_real_cve_database; then
-        verbose_log "✓ CVE database ready with real vulnerability data"
+        verbose_log "CVE database ready with real vulnerability data"
         return 0
     else
-        verbose_log "✗ Failed to initialize CVE database"
+        verbose_log "Failed to initialize CVE database"
         return 1
     fi
 }
@@ -650,7 +650,7 @@ update_cve_sources() {
             verbose_log "✓ BSI CVE data updated"
             ((sources_updated++))
         else
-            verbose_log "✗ Failed to fetch BSI CVE data"
+            verbose_log "Failed to fetch BSI CVE data"
             ((sources_failed++))
         fi
     fi
@@ -785,9 +785,9 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
     echo ""
     echo "Initializing CVE and build databases..."
     if update_cve_sources; then
-        echo "✓ CVE sources updated successfully"
+        echo "CVE sources updated successfully"
     else
-        echo "✗ Failed to update CVE sources"
+        echo "Failed to update CVE sources"
         exit $STATE_UNKNOWN
     fi
 
@@ -801,15 +801,15 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
         total_sources=$(jq -r '.total_sources // 0' "$CACHE_FILE" 2>/dev/null || echo 0)
 
         echo ""
-        echo "✓ CVE cache update completed successfully"
-        echo "→ Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
-        echo "→ Active sources: $sources"
-        echo "→ Total source files: $total_sources"
-        echo "→ Cache file: $CACHE_FILE"
-        echo "→ Build mappings: $BUILD_MAPPING_FILE"
-        echo "→ Source files directory: $CVE_DATABASE_DIR"
+        echo "CVE cache update completed successfully"
+        echo "Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
+        echo "Active sources: $sources"
+        echo "Total source files: $total_sources"
+        echo "Cache file: $CACHE_FILE"
+        echo "Build mappings: $BUILD_MAPPING_FILE"
+        echo "Source files directory: $CVE_DATABASE_DIR"
         echo ""
-        echo "📁 Generated database files:"
+        echo "Generated database files:"
         [[ -f "$BROADCOM_CACHE_FILE" ]] && echo "  • Broadcom CVEs: $BROADCOM_CACHE_FILE"
         [[ -f "$NVD_CACHE_FILE" ]] && echo "  • NVD CVEs: $NVD_CACHE_FILE"
         [[ -f "$BSI_CACHE_FILE" ]] && echo "  • BSI CVEs: $BSI_CACHE_FILE"
@@ -818,13 +818,13 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
         echo "  • Combined cache: $CACHE_FILE"
 
         echo ""
-        echo "🔄 To update CVE data, run: $0 --fetch-only --force-update"
-        echo "📝 To add custom CVEs, edit: $MANUAL_CVE_FILE"
-        echo "🔧 Build number mappings: $BUILD_MAPPING_FILE"
+        echo "To update CVE data, run: $0 --fetch-only --force-update"
+        echo "To add custom CVEs, edit: $MANUAL_CVE_FILE"
+        echo "Build number mappings: $BUILD_MAPPING_FILE"
 
         exit $STATE_OK
     else
-        echo "✗ CVE cache update failed"
+        echo "CVE cache update failed"
         exit $STATE_UNKNOWN
     fi
 fi
@@ -903,13 +903,13 @@ detect_version_soap() {
                 version_string="$version_string (build-$build)"
             fi
 
-            verbose_log "✓ SOAP detection successful: Product=$detected_product, Version=$version_string"
+            verbose_log "SOAP detection successful: Product=$detected_product, Version=$version_string"
             echo "$detected_product|$version_string"
             return 0
         fi
     fi
 
-    verbose_log "✗ SOAP detection failed or no response"
+    verbose_log "SOAP detection failed or no response"
     return 1
 }
 
@@ -931,7 +931,7 @@ detect_product() {
     fi
 
     # Default fallback
-    verbose_log "⚠ No specific product detected, defaulting to ESXi"
+    verbose_log "No specific product detected, defaulting to ESXi"
     echo "esxi"
     return 0
 }
@@ -956,7 +956,7 @@ get_version() {
             verbose_log "Warning: SOAP detected $detected_product but requested $product"
         fi
 
-        verbose_log "✓ SOAP version detection successful: $version_string"
+        verbose_log "SOAP version detection successful: $version_string"
         echo "$version_string"
         return 0
     fi
@@ -1058,12 +1058,12 @@ fetch_cve_data() {
         if update_cve_sources; then
             verbose_log "CVE sources updated successfully"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE sources updated" >&2
+                echo "  CVE sources updated" >&2
             fi
         else
             verbose_log "Failed to update CVE sources"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to update CVE sources" >&2
+                echo "  Failed to update CVE sources" >&2
             fi
             return 1
         fi
@@ -1076,16 +1076,16 @@ fetch_cve_data() {
             local sources=$(jq -r '.combined_sources | join(", ")' "$CACHE_FILE" 2>/dev/null || echo "Unknown")
 
             verbose_log "Total CVEs: $total_cves from sources: $sources"
-            verbose_log "✓ CVE database updated successfully"
+            verbose_log "CVE database updated successfully"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE database updated successfully" >&2
-                echo "  → Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
-                echo "  → Sources: $sources" >&2
+                echo "  CVE database updated successfully" >&2
+                echo "  Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
+                echo "  Sources: $sources" >&2
             fi
         else
             verbose_log "Failed to combine CVE data"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to combine CVE data" >&2
+                echo "  Failed to combine CVE data" >&2
             fi
             return 1
         fi
@@ -1458,3 +1458,4 @@ main() {
 
 # Execute main function - this MUST be at the very end
 main
+
