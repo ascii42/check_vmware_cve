@@ -1333,6 +1333,7 @@ fetch_cve_data() {
     fi
 
     return 0
+fi
 }
 
 # Version parsing functions
@@ -1696,9 +1697,11 @@ main() {
 }
 
 # Execute main function - this MUST be at the very end
-main ]]; then
+main
+        # Update CVE sources
+        verbose_log "Updating CVE sources with proxy support..."
+        if [[ "$VERBOSE" != "true" ]]; then
                 echo "Force updating CVE database with proxy support..." >&2
-            fi
         else
             verbose_log "CVE cache expired (age: $((cache_age/3600))h), updating with proxy support..."
             if [[ "$VERBOSE" != "true" ]]; then
@@ -1706,6 +1709,3 @@ main ]]; then
             fi
         fi
 
-        # Update CVE sources
-        verbose_log "Updating CVE sources with proxy support..."
-        if [[ "$VERBOSE" != "true"
