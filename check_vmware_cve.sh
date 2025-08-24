@@ -47,7 +47,7 @@ PROXY_USER=""
 PROXY_PASS=""
 PROXY_URL=""
 NO_PROXY=""
-USE_SYSTEM_PROXY=false
+USE_SYSTEM_PROXY=true
 
 # CVE source control
 USE_BROADCOM_CURATED=true
@@ -58,7 +58,7 @@ USE_MANUAL=true
 
 # Fetch control
 FETCH_ONLY=false
-DISABLE_FETCHING=false
+DISABLE_FETCHING=true
 UPDATE_BUILD_MAPPINGS=false
 
 # Cache configuration
@@ -651,40 +651,17 @@ EOF
 
 # Initialize manual CVE file
 initialize_manual_cve_file() {
-    if [[ ! -f "$MANUAL_CVE_FILE" ]]; then
-        verbose_log "Creating manual CVE database template..."
-        cat > "$MANUAL_CVE_FILE" << 'EOF'
+    verbose_log "Creating clean manual CVE database template..."
+    cat > "$MANUAL_CVE_FILE" << 'EOF'
 {
   "source": "Manual Entries",
-  "last_updated": "2025-08-23T10:00:00Z",
-  "cves": [
-    {
-      "cve_id": "CVE-CUSTOM-2025",
-      "affected_products": ["esxi", "vcenter"],
-      "cvss_score": 8.0,
-      "severity": "High",
-      "published_date": "2025-08-01",
-      "description": "Custom CVE entry example",
-      "workaround": "Example workaround",
-      "patch_available": false,
-      "source": "Manual Entry",
-      "affected_versions": [
-        {
-          "version": "8.0",
-          "vulnerable_builds": ["< 99999999"],
-          "fixed_builds": [],
-          "fixed_in_release": "Not yet fixed"
-        }
-      ],
-      "auto_fetched": false,
-      "exploited_in_wild": false
-    }
-  ]
+  "last_updated": "2025-08-24T10:00:00Z",
+  "description": "Manual CVE entries for custom vulnerability tracking",
+  "cves": []
 }
 EOF
-        chmod 644 "$MANUAL_CVE_FILE"
-        verbose_log "Manual CVE database template created"
-    fi
+    chmod 644 "$MANUAL_CVE_FILE"
+    verbose_log "Manual CVE database template created (empty - no test CVEs)"
 }
 
 # Update CVE sources with proxy support
@@ -1032,23 +1009,23 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
     FORCE_UPDATE=true
 
     # Show proxy configuration
-    echo "→ Proxy configuration:"
+    echo "-> Proxy configuration:"
     if [[ -n "$PROXY_URL" ]]; then
-        echo "  • Proxy URL: $PROXY_URL"
-        [[ -n "$NO_PROXY" ]] && echo "  • No-proxy list: $NO_PROXY"
+        echo "  * Proxy URL: $PROXY_URL"
+        [[ -n "$NO_PROXY" ]] && echo "  * No-proxy list: $NO_PROXY"
     elif [[ "$USE_SYSTEM_PROXY" == "true" ]]; then
-        echo "  • Using system proxy settings"
+        echo "  * Using system proxy settings"
     else
-        echo "  • No proxy configured"
+        echo "  * No proxy configured"
     fi
 
     # Show which sources will be fetched
-    echo "→ Enabled CVE sources:"
-    [[ "$USE_BROADCOM_CURATED" == "true" ]] && echo "  • Broadcom Security Advisories (with real build numbers)"
-    [[ "$USE_BROADCOM_AUTO" == "true" ]] && echo "  • Broadcom Auto-fetch"
-    [[ "$USE_NVD" == "true" ]] && echo "  • NIST NVD"
-    [[ "$USE_BSI" == "true" ]] && echo "  • German BSI CERT"
-    [[ "$USE_MANUAL" == "true" ]] && echo "  • Manual CVE entries"
+    echo "-> Enabled CVE sources:"
+    [[ "$USE_BROADCOM_CURATED" == "true" ]] && echo "  * Broadcom Security Advisories (with real build numbers)"
+    [[ "$USE_BROADCOM_AUTO" == "true" ]] && echo "  * Broadcom Auto-fetch"
+    [[ "$USE_NVD" == "true" ]] && echo "  * NIST NVD"
+    [[ "$USE_BSI" == "true" ]] && echo "  * German BSI CERT"
+    [[ "$USE_MANUAL" == "true" ]] && echo "  * Manual CVE entries"
 
     # Update CVE sources
     echo ""
@@ -1061,7 +1038,7 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
     fi
 
     # Combine and create cache
-    echo "→ Combining CVE data from all sources..."
+    echo "-> Combining CVE data from all sources..."
     if combine_cve_data; then
         total_cves=$(jq '.cves | length' "$CACHE_FILE" 2>/dev/null || echo 0)
         manual_cves=$(jq '[.cves[] | select(.auto_fetched != true)] | length' "$CACHE_FILE" 2>/dev/null || echo 0)
@@ -1071,29 +1048,29 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
         proxy_configured=$(jq -r '.proxy_configured // false' "$CACHE_FILE" 2>/dev/null || echo "false")
 
         echo ""
-        echo "✓ CVE cache update completed successfully with proxy support"
-        echo "→ Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
-        echo "→ Active sources: $sources"
-        echo "→ Total source files: $total_sources"
-        echo "→ Proxy configured: $proxy_configured"
-        echo "→ Cache file: $CACHE_FILE"
-        echo "→ Build mappings: $BUILD_MAPPING_FILE"
-        echo "→ Source files directory: $CVE_DATABASE_DIR"
+        echo "* CVE cache update completed successfully with proxy support"
+        echo "-> Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
+        echo "-> Active sources: $sources"
+        echo "-> Total source files: $total_sources"
+        echo "-> Proxy configured: $proxy_configured"
+        echo "-> Cache file: $CACHE_FILE"
+        echo "-> Build mappings: $BUILD_MAPPING_FILE"
+        echo "-> Source files directory: $CVE_DATABASE_DIR"
         echo ""
-        echo "📁 Generated database files:"
-        [[ -f "$REAL_CVE_DATABASE_FILE" ]] && echo "  • Real CVE database: $REAL_CVE_DATABASE_FILE"
-        [[ -f "$BROADCOM_CACHE_FILE" ]] && echo "  • Broadcom CVEs: $BROADCOM_CACHE_FILE"
-        [[ -f "$NVD_CACHE_FILE" ]] && echo "  • NVD CVEs: $NVD_CACHE_FILE"
-        [[ -f "$BSI_CACHE_FILE" ]] && echo "  • BSI CVEs: $BSI_CACHE_FILE"
-        [[ -f "$MANUAL_CVE_FILE" ]] && echo "  • Manual CVEs: $MANUAL_CVE_FILE"
-        [[ -f "$BUILD_MAPPING_FILE" ]] && echo "  • Build mappings: $BUILD_MAPPING_FILE"
-        echo "  • Combined cache: $CACHE_FILE"
+        echo "Generated database files:"
+        [[ -f "$REAL_CVE_DATABASE_FILE" ]] && echo "  * Real CVE database: $REAL_CVE_DATABASE_FILE"
+        [[ -f "$BROADCOM_CACHE_FILE" ]] && echo "  * Broadcom CVEs: $BROADCOM_CACHE_FILE"
+        [[ -f "$NVD_CACHE_FILE" ]] && echo "  * NVD CVEs: $NVD_CACHE_FILE"
+        [[ -f "$BSI_CACHE_FILE" ]] && echo "  * BSI CVEs: $BSI_CACHE_FILE"
+        [[ -f "$MANUAL_CVE_FILE" ]] && echo "  * Manual CVEs: $MANUAL_CVE_FILE"
+        [[ -f "$BUILD_MAPPING_FILE" ]] && echo "  * Build mappings: $BUILD_MAPPING_FILE"
+        echo "  * Combined cache: $CACHE_FILE"
 
         echo ""
-        echo "🔄 To update CVE data, run: $0 --fetch-only --force-update"
-        echo "📝 To add custom CVEs, edit: $MANUAL_CVE_FILE"
-        echo "🔧 Build number mappings: $BUILD_MAPPING_FILE"
-        echo "📊 Real CVE database: $REAL_CVE_DATABASE_FILE"
+        echo "To update CVE data, run: $0 --fetch-only --force-update"
+        echo "To add custom CVEs, edit: $MANUAL_CVE_FILE"
+        echo "Build number mappings: $BUILD_MAPPING_FILE"
+        echo "Real CVE database: $REAL_CVE_DATABASE_FILE"
 
         exit $STATE_OK
     else
@@ -1314,18 +1291,18 @@ fetch_cve_data() {
         if [[ "$FORCE_UPDATE" == "true" ]]; then
             verbose_log "Force update requested, refreshing CVE data with proxy support..."
             if [[ "$VERBOSE" != "true" ]]; then
-            echo "→ Updating CVE sources with proxy support..." >&2
+            echo "-> Updating CVE sources with proxy support..." >&2
         fi
 
         if update_cve_sources; then
             verbose_log "CVE sources updated successfully"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE sources updated" >&2
+                echo "  * CVE sources updated" >&2
             fi
         else
             verbose_log "Failed to update CVE sources"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to update CVE sources" >&2
+                echo "  X Failed to update CVE sources" >&2
             fi
             return 1
         fi
@@ -1340,14 +1317,14 @@ fetch_cve_data() {
             verbose_log "Total CVEs: $total_cves from sources: $sources"
             verbose_log "✓ CVE database updated successfully with proxy support"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE database updated successfully" >&2
-                echo "  → Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
-                echo "  → Sources: $sources" >&2
+                echo "  * CVE database updated successfully" >&2
+                echo "  -> Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
+                echo "  -> Sources: $sources" >&2
             fi
         else
             verbose_log "Failed to combine CVE data"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to combine CVE data" >&2
+                echo "  X Failed to combine CVE data" >&2
             fi
             return 1
         fi
