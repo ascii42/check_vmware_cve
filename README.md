@@ -12,7 +12,7 @@ A comprehensive monitoring plugin that automatically tracks VMware vulnerabiliti
 ## 🚀 Features
 
 ### **Core Functionality**
-- **Auto-detecting VMware Products**: ESXi, vCenter, NSX, vCloud Director, vRealize/Aria
+- **Auto-detecting VMware Products**: ESXi, vCenter, NSX (not tested yet), vCloud Director (not tested yet), vRealize/Aria (not tested yet)
 - **Real-time CVE Database**: Auto-fetches from multiple authoritative sources
 - **Precise Build Matching**: Compares actual build numbers with vulnerability data
 - **Enterprise Proxy Support**: Full HTTP/HTTPS proxy integration with authentication
