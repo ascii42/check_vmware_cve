@@ -13,9 +13,11 @@
 #   Initial release - alpha
 # Release: 0.0.2
 #   add proxy support
+# Release: 0.0.3
+#   Fixed missing functions and improved error handling
 #
 PROGNAME=$(basename "$0")
-VERSION="0.0.2"
+VERSION="0.0.3"
 AUTHOR="Felix Longardt"
 
 # Nagios/Icinga return codes
@@ -45,7 +47,7 @@ PROXY_USER=""
 PROXY_PASS=""
 PROXY_URL=""
 NO_PROXY=""
-USE_SYSTEM_PROXY=false
+USE_SYSTEM_PROXY=true
 
 # CVE source control
 USE_BROADCOM_CURATED=true
@@ -56,7 +58,7 @@ USE_MANUAL=true
 
 # Fetch control
 FETCH_ONLY=false
-DISABLE_FETCHING=false
+DISABLE_FETCHING=true
 UPDATE_BUILD_MAPPINGS=false
 
 # Cache configuration
@@ -176,175 +178,6 @@ print_help() {
     echo "  Fetch log: $FETCH_LOG"
 }
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -H|--hostname)
-            HOSTNAME="$2"
-            shift 2
-            ;;
-        -u|--username)
-            USERNAME="$2"
-            shift 2
-            ;;
-        -p|--password)
-            PASSWORD="$2"
-            shift 2
-            ;;
-        -P|--product)
-            PRODUCT="$2"
-            shift 2
-            ;;
-        -w|--warning)
-            WARNING_CVSS="$2"
-            shift 2
-            ;;
-        -c|--critical)
-            CRITICAL_CVSS="$2"
-            shift 2
-            ;;
-        -d|--use-days)
-            USE_DAYS=true
-            shift
-            ;;
-        -W|--warn-days)
-            WARNING_DAYS="$2"
-            shift 2
-            ;;
-        -C|--crit-days)
-            CRITICAL_DAYS="$2"
-            shift 2
-            ;;
-        -t|--timeout)
-            TIMEOUT="$2"
-            shift 2
-            ;;
-        -v|--verbose)
-            VERBOSE=true
-            shift
-            ;;
-        -f|--force-update)
-            FORCE_UPDATE=true
-            shift
-            ;;
-        --disable-broadcom-curated)
-            USE_BROADCOM_CURATED=false
-            shift
-            ;;
-        --disable-broadcom-auto)
-            USE_BROADCOM_AUTO=false
-            shift
-            ;;
-        --disable-nvd)
-            USE_NVD=false
-            shift
-            ;;
-        --disable-bsi)
-            USE_BSI=false
-            shift
-            ;;
-        --disable-manual)
-            USE_MANUAL=false
-            shift
-            ;;
-        --only-broadcom)
-            USE_BROADCOM_CURATED=true
-            USE_BROADCOM_AUTO=true
-            USE_NVD=false
-            USE_BSI=false
-            USE_MANUAL=false
-            shift
-            ;;
-        --only-nvd)
-            USE_BROADCOM_CURATED=false
-            USE_BROADCOM_AUTO=false
-            USE_NVD=true
-            USE_BSI=false
-            USE_MANUAL=false
-            shift
-            ;;
-        --only-bsi)
-            USE_BROADCOM_CURATED=false
-            USE_BROADCOM_AUTO=false
-            USE_NVD=false
-            USE_BSI=true
-            USE_MANUAL=false
-            shift
-            ;;
-        --only-manual)
-            USE_BROADCOM_CURATED=false
-            USE_BROADCOM_AUTO=false
-            USE_NVD=false
-            USE_BSI=false
-            USE_MANUAL=true
-            shift
-            ;;
-        --fetch-only)
-            FETCH_ONLY=true
-            shift
-            ;;
-        --disable-fetching)
-            DISABLE_FETCHING=true
-            shift
-            ;;
-        --update-build-mappings)
-            UPDATE_BUILD_MAPPINGS=true
-            shift
-            ;;
-        --proxy-host)
-            PROXY_HOST="$2"
-            shift 2
-            ;;
-        --proxy-port)
-            PROXY_PORT="$2"
-            shift 2
-            ;;
-        --proxy-user)
-            PROXY_USER="$2"
-            shift 2
-            ;;
-        --proxy-pass)
-            PROXY_PASS="$2"
-            shift 2
-            ;;
-        --proxy-url)
-            PROXY_URL="$2"
-            shift 2
-            ;;
-        --no-proxy)
-            NO_PROXY="$2"
-            shift 2
-            ;;
-        --use-system-proxy)
-            USE_SYSTEM_PROXY=true
-            shift
-            ;;
-        -h|--help)
-            print_help
-            exit $STATE_OK
-            ;;
-        -V|--version)
-            echo "$PROGNAME $VERSION"
-            exit $STATE_OK
-            ;;
-        *)
-            echo "Unknown option: $1"
-            print_usage
-            exit $STATE_UNKNOWN
-            ;;
-    esac
-done
-
-# Validate required parameters
-if [[ "$FETCH_ONLY" != "true" ]]; then
-    if [[ -z "$HOSTNAME" || -z "$USERNAME" || -z "$PASSWORD" ]]; then
-        echo "[UNKNOWN] - Missing required parameters (hostname, username, password)"
-        echo "Use --fetch-only to update CVE cache without checking hosts"
-        print_usage
-        exit $STATE_UNKNOWN
-    fi
-fi
-
 # Configure proxy settings
 configure_proxy() {
     verbose_log "Configuring proxy settings..."
@@ -400,9 +233,6 @@ get_curl_proxy_args() {
 
     echo "$proxy_args"
 }
-
-# Configure proxy settings
-configure_proxy
 
 # Create external CVE database file
 create_real_cve_database() {
@@ -821,18 +651,17 @@ EOF
 
 # Initialize manual CVE file
 initialize_manual_cve_file() {
-    if [[ ! -f "$MANUAL_CVE_FILE" ]]; then
-        verbose_log "Creating manual CVE database template..."
-        cat > "$MANUAL_CVE_FILE" << 'EOF'
+    verbose_log "Creating clean manual CVE database template..."
+    cat > "$MANUAL_CVE_FILE" << 'EOF'
 {
   "source": "Manual Entries",
-  "last_updated": "2025-08-23T10:00:00Z",
+  "last_updated": "2025-08-24T10:00:00Z",
+  "description": "Manual CVE entries for custom vulnerability tracking",
   "cves": []
 }
 EOF
-        chmod 644 "$MANUAL_CVE_FILE"
-        verbose_log "Manual CVE database template created"
-    fi
+    chmod 644 "$MANUAL_CVE_FILE"
+    verbose_log "Manual CVE database template created (empty - no test CVEs)"
 }
 
 # Update CVE sources with proxy support
@@ -843,8 +672,13 @@ update_cve_sources() {
     local sources_failed=0
 
     # Initialize build mappings
-    initialize_build_mappings
-    ((sources_updated++))
+    if initialize_build_mappings; then
+        verbose_log "✓ Build mappings initialized"
+        ((sources_updated++))
+    else
+        verbose_log "✗ Failed to initialize build mappings"
+        ((sources_failed++))
+    fi
 
     # Fetch Broadcom data if enabled
     if [[ "$USE_BROADCOM_CURATED" == "true" || "$USE_BROADCOM_AUTO" == "true" ]]; then
@@ -885,6 +719,7 @@ update_cve_sources() {
     # Initialize manual CVE file
     if [[ "$USE_MANUAL" == "true" ]]; then
         initialize_manual_cve_file
+        verbose_log "✓ Manual CVE file initialized"
         ((sources_updated++))
     fi
 
@@ -994,6 +829,178 @@ combine_cve_data() {
     fi
 }
 
+# Parse command line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -H|--hostname)
+            HOSTNAME="$2"
+            shift 2
+            ;;
+        -u|--username)
+            USERNAME="$2"
+            shift 2
+            ;;
+        -p|--password)
+            PASSWORD="$2"
+            shift 2
+            ;;
+        -P|--product)
+            PRODUCT="$2"
+            shift 2
+            ;;
+        -w|--warning)
+            WARNING_CVSS="$2"
+            shift 2
+            ;;
+        -c|--critical)
+            CRITICAL_CVSS="$2"
+            shift 2
+            ;;
+        -d|--use-days)
+            USE_DAYS=true
+            shift
+            ;;
+        -W|--warn-days)
+            WARNING_DAYS="$2"
+            shift 2
+            ;;
+        -C|--crit-days)
+            CRITICAL_DAYS="$2"
+            shift 2
+            ;;
+        -t|--timeout)
+            TIMEOUT="$2"
+            shift 2
+            ;;
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        -f|--force-update)
+            FORCE_UPDATE=true
+            shift
+            ;;
+        --disable-broadcom-curated)
+            USE_BROADCOM_CURATED=false
+            shift
+            ;;
+        --disable-broadcom-auto)
+            USE_BROADCOM_AUTO=false
+            shift
+            ;;
+        --disable-nvd)
+            USE_NVD=false
+            shift
+            ;;
+        --disable-bsi)
+            USE_BSI=false
+            shift
+            ;;
+        --disable-manual)
+            USE_MANUAL=false
+            shift
+            ;;
+        --only-broadcom)
+            USE_BROADCOM_CURATED=true
+            USE_BROADCOM_AUTO=true
+            USE_NVD=false
+            USE_BSI=false
+            USE_MANUAL=false
+            shift
+            ;;
+        --only-nvd)
+            USE_BROADCOM_CURATED=false
+            USE_BROADCOM_AUTO=false
+            USE_NVD=true
+            USE_BSI=false
+            USE_MANUAL=false
+            shift
+            ;;
+        --only-bsi)
+            USE_BROADCOM_CURATED=false
+            USE_BROADCOM_AUTO=false
+            USE_NVD=false
+            USE_BSI=true
+            USE_MANUAL=false
+            shift
+            ;;
+        --only-manual)
+            USE_BROADCOM_CURATED=false
+            USE_BROADCOM_AUTO=false
+            USE_NVD=false
+            USE_BSI=false
+            USE_MANUAL=true
+            shift
+            ;;
+        --fetch-only)
+            FETCH_ONLY=true
+            shift
+            ;;
+        --disable-fetching)
+            DISABLE_FETCHING=true
+            shift
+            ;;
+        --update-build-mappings)
+            UPDATE_BUILD_MAPPINGS=true
+            shift
+            ;;
+        --proxy-host)
+            PROXY_HOST="$2"
+            shift 2
+            ;;
+        --proxy-port)
+            PROXY_PORT="$2"
+            shift 2
+            ;;
+        --proxy-user)
+            PROXY_USER="$2"
+            shift 2
+            ;;
+        --proxy-pass)
+            PROXY_PASS="$2"
+            shift 2
+            ;;
+        --proxy-url)
+            PROXY_URL="$2"
+            shift 2
+            ;;
+        --no-proxy)
+            NO_PROXY="$2"
+            shift 2
+            ;;
+        --use-system-proxy)
+            USE_SYSTEM_PROXY=true
+            shift
+            ;;
+        -h|--help)
+            print_help
+            exit $STATE_OK
+            ;;
+        -V|--version)
+            echo "$PROGNAME $VERSION"
+            exit $STATE_OK
+            ;;
+        *)
+            echo "Unknown option: $1"
+            print_usage
+            exit $STATE_UNKNOWN
+            ;;
+    esac
+done
+
+# Validate required parameters
+if [[ "$FETCH_ONLY" != "true" ]]; then
+    if [[ -z "$HOSTNAME" || -z "$USERNAME" || -z "$PASSWORD" ]]; then
+        echo "[UNKNOWN] - Missing required parameters (hostname, username, password)"
+        echo "Use --fetch-only to update CVE cache without checking hosts"
+        print_usage
+        exit $STATE_UNKNOWN
+    fi
+fi
+
+# Configure proxy settings
+configure_proxy
+
 # Handle fetch-only mode
 if [[ "$FETCH_ONLY" == "true" ]]; then
     echo "CVE Cache Update Mode - Auto-updating CVE and build database with proxy support..."
@@ -1002,23 +1009,23 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
     FORCE_UPDATE=true
 
     # Show proxy configuration
-    echo "→ Proxy configuration:"
+    echo "-> Proxy configuration:"
     if [[ -n "$PROXY_URL" ]]; then
-        echo "  • Proxy URL: $PROXY_URL"
-        [[ -n "$NO_PROXY" ]] && echo "  • No-proxy list: $NO_PROXY"
+        echo "  * Proxy URL: $PROXY_URL"
+        [[ -n "$NO_PROXY" ]] && echo "  * No-proxy list: $NO_PROXY"
     elif [[ "$USE_SYSTEM_PROXY" == "true" ]]; then
-        echo "  • Using system proxy settings"
+        echo "  * Using system proxy settings"
     else
-        echo "  • No proxy configured"
+        echo "  * No proxy configured"
     fi
 
     # Show which sources will be fetched
-    echo "→ Enabled CVE sources:"
-    [[ "$USE_BROADCOM_CURATED" == "true" ]] && echo "  • Broadcom Security Advisories (with real build numbers)"
-    [[ "$USE_BROADCOM_AUTO" == "true" ]] && echo "  • Broadcom Auto-fetch"
-    [[ "$USE_NVD" == "true" ]] && echo "  • NIST NVD"
-    [[ "$USE_BSI" == "true" ]] && echo "  • German BSI CERT"
-    [[ "$USE_MANUAL" == "true" ]] && echo "  • Manual CVE entries"
+    echo "-> Enabled CVE sources:"
+    [[ "$USE_BROADCOM_CURATED" == "true" ]] && echo "  * Broadcom Security Advisories (with real build numbers)"
+    [[ "$USE_BROADCOM_AUTO" == "true" ]] && echo "  * Broadcom Auto-fetch"
+    [[ "$USE_NVD" == "true" ]] && echo "  * NIST NVD"
+    [[ "$USE_BSI" == "true" ]] && echo "  * German BSI CERT"
+    [[ "$USE_MANUAL" == "true" ]] && echo "  * Manual CVE entries"
 
     # Update CVE sources
     echo ""
@@ -1031,7 +1038,7 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
     fi
 
     # Combine and create cache
-    echo "→ Combining CVE data from all sources..."
+    echo "-> Combining CVE data from all sources..."
     if combine_cve_data; then
         total_cves=$(jq '.cves | length' "$CACHE_FILE" 2>/dev/null || echo 0)
         manual_cves=$(jq '[.cves[] | select(.auto_fetched != true)] | length' "$CACHE_FILE" 2>/dev/null || echo 0)
@@ -1041,29 +1048,29 @@ if [[ "$FETCH_ONLY" == "true" ]]; then
         proxy_configured=$(jq -r '.proxy_configured // false' "$CACHE_FILE" 2>/dev/null || echo "false")
 
         echo ""
-        echo "✓ CVE cache update completed successfully with proxy support"
-        echo "→ Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
-        echo "→ Active sources: $sources"
-        echo "→ Total source files: $total_sources"
-        echo "→ Proxy configured: $proxy_configured"
-        echo "→ Cache file: $CACHE_FILE"
-        echo "→ Build mappings: $BUILD_MAPPING_FILE"
-        echo "→ Source files directory: $CVE_DATABASE_DIR"
+        echo "* CVE cache update completed successfully with proxy support"
+        echo "-> Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)"
+        echo "-> Active sources: $sources"
+        echo "-> Total source files: $total_sources"
+        echo "-> Proxy configured: $proxy_configured"
+        echo "-> Cache file: $CACHE_FILE"
+        echo "-> Build mappings: $BUILD_MAPPING_FILE"
+        echo "-> Source files directory: $CVE_DATABASE_DIR"
         echo ""
-        echo "📁 Generated database files:"
-        [[ -f "$REAL_CVE_DATABASE_FILE" ]] && echo "  • Real CVE database: $REAL_CVE_DATABASE_FILE"
-        [[ -f "$BROADCOM_CACHE_FILE" ]] && echo "  • Broadcom CVEs: $BROADCOM_CACHE_FILE"
-        [[ -f "$NVD_CACHE_FILE" ]] && echo "  • NVD CVEs: $NVD_CACHE_FILE"
-        [[ -f "$BSI_CACHE_FILE" ]] && echo "  • BSI CVEs: $BSI_CACHE_FILE"
-        [[ -f "$MANUAL_CVE_FILE" ]] && echo "  • Manual CVEs: $MANUAL_CVE_FILE"
-        [[ -f "$BUILD_MAPPING_FILE" ]] && echo "  • Build mappings: $BUILD_MAPPING_FILE"
-        echo "  • Combined cache: $CACHE_FILE"
+        echo "Generated database files:"
+        [[ -f "$REAL_CVE_DATABASE_FILE" ]] && echo "  * Real CVE database: $REAL_CVE_DATABASE_FILE"
+        [[ -f "$BROADCOM_CACHE_FILE" ]] && echo "  * Broadcom CVEs: $BROADCOM_CACHE_FILE"
+        [[ -f "$NVD_CACHE_FILE" ]] && echo "  * NVD CVEs: $NVD_CACHE_FILE"
+        [[ -f "$BSI_CACHE_FILE" ]] && echo "  * BSI CVEs: $BSI_CACHE_FILE"
+        [[ -f "$MANUAL_CVE_FILE" ]] && echo "  * Manual CVEs: $MANUAL_CVE_FILE"
+        [[ -f "$BUILD_MAPPING_FILE" ]] && echo "  * Build mappings: $BUILD_MAPPING_FILE"
+        echo "  * Combined cache: $CACHE_FILE"
 
         echo ""
-        echo "🔄 To update CVE data, run: $0 --fetch-only --force-update"
-        echo "📝 To add custom CVEs, edit: $MANUAL_CVE_FILE"
-        echo "🔧 Build number mappings: $BUILD_MAPPING_FILE"
-        echo "📊 Real CVE database: $REAL_CVE_DATABASE_FILE"
+        echo "To update CVE data, run: $0 --fetch-only --force-update"
+        echo "To add custom CVEs, edit: $MANUAL_CVE_FILE"
+        echo "Build number mappings: $BUILD_MAPPING_FILE"
+        echo "Real CVE database: $REAL_CVE_DATABASE_FILE"
 
         exit $STATE_OK
     else
@@ -1284,30 +1291,18 @@ fetch_cve_data() {
         if [[ "$FORCE_UPDATE" == "true" ]]; then
             verbose_log "Force update requested, refreshing CVE data with proxy support..."
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "Force updating CVE database with proxy support..." >&2
-            fi
-        else
-            verbose_log "CVE cache expired (age: $((cache_age/3600))h), updating with proxy support..."
-            if [[ "$VERBOSE" != "true" ]]; then
-                echo "Updating CVE database with proxy support (last update: $((cache_age/3600))h ago)..." >&2
-            fi
-        fi
-
-        # Update CVE sources
-        verbose_log "Updating CVE sources with proxy support..."
-        if [[ "$VERBOSE" != "true" ]]; then
-            echo "→ Updating CVE sources with proxy support..." >&2
+            echo "-> Updating CVE sources with proxy support..." >&2
         fi
 
         if update_cve_sources; then
             verbose_log "CVE sources updated successfully"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE sources updated" >&2
+                echo "  * CVE sources updated" >&2
             fi
         else
             verbose_log "Failed to update CVE sources"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to update CVE sources" >&2
+                echo "  X Failed to update CVE sources" >&2
             fi
             return 1
         fi
@@ -1322,14 +1317,14 @@ fetch_cve_data() {
             verbose_log "Total CVEs: $total_cves from sources: $sources"
             verbose_log "✓ CVE database updated successfully with proxy support"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✓ CVE database updated successfully" >&2
-                echo "  → Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
-                echo "  → Sources: $sources" >&2
+                echo "  * CVE database updated successfully" >&2
+                echo "  -> Total CVEs: $total_cves (manual: $manual_cves, real data: $auto_cves)" >&2
+                echo "  -> Sources: $sources" >&2
             fi
         else
             verbose_log "Failed to combine CVE data"
             if [[ "$VERBOSE" != "true" ]]; then
-                echo "  ✗ Failed to combine CVE data" >&2
+                echo "  X Failed to combine CVE data" >&2
             fi
             return 1
         fi
@@ -1338,6 +1333,7 @@ fetch_cve_data() {
     fi
 
     return 0
+fi
 }
 
 # Version parsing functions
@@ -1702,3 +1698,14 @@ main() {
 
 # Execute main function - this MUST be at the very end
 main
+        # Update CVE sources
+        verbose_log "Updating CVE sources with proxy support..."
+        if [[ "$VERBOSE" != "true" ]]; then
+                echo "Force updating CVE database with proxy support..." >&2
+        else
+            verbose_log "CVE cache expired (age: $((cache_age/3600))h), updating with proxy support..."
+            if [[ "$VERBOSE" != "true" ]]; then
+                echo "Updating CVE database with proxy support (last update: $((cache_age/3600))h ago)..." >&2
+            fi
+        fi
+
