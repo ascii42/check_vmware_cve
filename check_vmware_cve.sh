@@ -4,7 +4,7 @@
 
 # Dependencies: curl, jq
 # Enhanced ESXi/VMware CVE Check Plugin - AUTO-UPDATING VERSION
-# Supports ESXi, vCenter, NSX, vCloud Director, vRealize/Aria
+# Supports ESXi, vCenter, (upcoming NSX, vCloud Director, vRealize/Aria)
 # Sources: NVD, Broadcom Security, BSI.BUND + Auto-Updating Build Numbers
 
 # Version history:
@@ -15,9 +15,11 @@
 #   add proxy support
 # Release: 0.0.3
 #   Fixed missing functions and improved error handling
+# Release: 0.1.0
+#   Beta, after testing
 #
 PROGNAME=$(basename "$0")
-VERSION="0.0.3"
+VERSION="0.1.0"
 AUTHOR="Felix Longardt"
 
 # Nagios/Icinga return codes
@@ -1708,4 +1710,5 @@ main
                 echo "Updating CVE database with proxy support (last update: $((cache_age/3600))h ago)..." >&2
             fi
         fi
+
 
