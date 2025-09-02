@@ -15,9 +15,11 @@
 #   add proxy support
 # Release: 0.0.3
 #   Fixed missing functions and improved error handling
+# Release: 0.0.4
+#   Fixed some build numbers
 #
 PROGNAME=$(basename "$0")
-VERSION="0.0.3"
+VERSION="0.0.4"
 AUTHOR="Felix Longardt"
 
 # Nagios/Icinga return codes
@@ -261,8 +263,8 @@ create_real_cve_database() {
       "affected_versions": [
         {
           "version": "8.0",
-          "vulnerable_builds": ["< 24962300"],
-          "fixed_builds": ["24962300"],
+          "vulnerable_builds": ["< 24674346"],
+          "fixed_builds": ["24674346"],
           "fixed_in_release": "vCenter 8.0 U3e"
         }
       ],
@@ -429,17 +431,18 @@ initialize_build_mappings() {
     }
   },
   "vcenter": {
-    "8.0": {
-      "8.0.3": {
-        "releases": [
-          {"name": "vCenter80U3-22837322", "build": 22837322, "date": "2024-01-25", "patch_level": "base"},
-          {"name": "vCenter80U3a-23794108", "build": 23794108, "date": "2024-05-21", "patch_level": "a"},
-          {"name": "vCenter80U3b-24322831", "build": 24322831, "date": "2024-09-17", "patch_level": "b"},
-          {"name": "vCenter80U3c-24472730", "build": 24472730, "date": "2024-12-10", "patch_level": "c"},
-          {"name": "vCenter80U3d-24674346", "build": 24674346, "date": "2025-05-14", "patch_level": "d"},
-          {"name": "vCenter80U3e-24962300", "build": 24962300, "date": "2025-07-01", "patch_level": "e"}
-        ]
-      }
+  "8.0": {
+    "8.0.3": {
+      "releases": [
+        {"name": "vCenter80U3-22837322", "build": 22837322, "date": "2024-01-25", "patch_level": "base"},
+        {"name": "vCenter80U3a-23794108", "build": 23794108, "date": "2024-05-21", "patch_level": "a"},
+        {"name": "vCenter80U3b-24322831", "build": 24322831, "date": "2024-09-17", "patch_level": "b"},
+        {"name": "vCenter80U3c-24472730", "build": 24472730, "date": "2024-12-10", "patch_level": "c"},
+        {"name": "vCenter80U3d-24585383", "build": 24585383, "date": "2025-02-25", "patch_level": "d"},
+        {"name": "vCenter80U3e-24674346", "build": 24674346, "date": "2025-05-20", "patch_level": "e"},
+        {"name": "vCenter80U3f-24755230", "build": 24755230, "date": "2025-06-17", "patch_level": "f"},
+        {"name": "vCenter80U3g-24853646", "build": 24853646, "date": "2025-07-29", "patch_level": "g"}
+      ]
     }
   }
 }
